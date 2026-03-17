@@ -3,7 +3,15 @@ import { getServerSupabase, getFriendFromRequest } from "@/lib/auth";
 
 // GET /api/podcasts — lecture publique avec filtres
 export async function GET(req: Request) {
-  const supabase = getServerSupabase();
+  let supabase;
+  try {
+    supabase = getServerSupabase();
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Service non disponible" },
+      { status: 503 }
+    );
+  }
   const friend = await getFriendFromRequest(req);
   const { searchParams } = new URL(req.url);
 

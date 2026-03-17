@@ -91,6 +91,21 @@ create table public.comments (
 -- ROW LEVEL SECURITY
 -- ============================================================
 
+-- Fonction helper pour éviter la récursion infinie dans les politiques
+-- (security definer = s'exécute sans RLS, brise la boucle)
+create or replace function public.is_current_user_admin()
+returns boolean
+language sql
+security definer
+stable
+as $$
+  select exists (
+    select 1 from public.friends
+    where user_id = auth.uid() and is_admin = true
+  );
+$$;
+
+
 alter table public.friends     enable row level security;
 alter table public.invitations enable row level security;
 alter table public.podcasts    enable row level security;
@@ -104,12 +119,7 @@ create policy "friends_select_public" on public.friends
 
 -- Admin peut tout faire
 create policy "friends_all_admin" on public.friends
-  for all using (
-    exists (
-      select 1 from public.friends f
-      where f.user_id = auth.uid() and f.is_admin = true
-    )
-  );
+  for all using (public.is_current_user_admin());
 
 -- Un ami peut modifier son propre profil
 create policy "friends_update_self" on public.friends
@@ -118,12 +128,7 @@ create policy "friends_update_self" on public.friends
 -- ---- INVITATIONS ----
 -- Admin uniquement
 create policy "invitations_admin" on public.invitations
-  for all using (
-    exists (
-      select 1 from public.friends f
-      where f.user_id = auth.uid() and f.is_admin = true
-    )
-  );
+  for all using (public.is_current_user_admin());
 
 -- Token d'invitation : lecture publique pour valider lors de l'inscription
 create policy "invitations_token_check" on public.invitations
@@ -147,8 +152,7 @@ create policy "podcasts_insert_friends" on public.podcasts
 create policy "podcasts_update_author_or_admin" on public.podcasts
   for update using (
     (select user_id from public.friends where id = friend_id) = auth.uid()
-    or
-    exists (select 1 from public.friends f where f.user_id = auth.uid() and f.is_admin = true)
+    or public.is_current_user_admin()
   );
 
 -- ---- REACTIONS ----
@@ -183,8 +187,7 @@ create policy "comments_insert_friends" on public.comments
 create policy "comments_update_author_or_admin" on public.comments
   for update using (
     (select user_id from public.friends where id = friend_id) = auth.uid()
-    or
-    exists (select 1 from public.friends f where f.user_id = auth.uid() and f.is_admin = true)
+    or public.is_current_user_admin()
   );
 
 -- ============================================================

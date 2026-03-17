@@ -17,10 +17,14 @@ export function useAuth(): AuthState {
 
   useEffect(() => {
     const supabase = getSupabase();
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
 
     async function loadProfile(userId: string, token: string) {
       setAccessToken(token);
-      const { data } = await supabase
+      const { data } = await supabase!
         .from("friends")
         .select("*")
         .eq("user_id", userId)

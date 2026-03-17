@@ -10,7 +10,8 @@ export default function Navbar() {
   const { friend, loading } = useAuth();
 
   async function handleLogout() {
-    await getSupabase().auth.signOut();
+    const supabase = getSupabase();
+    if (supabase) await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
   }

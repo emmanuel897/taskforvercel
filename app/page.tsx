@@ -42,7 +42,14 @@ export default function HomePage() {
       if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
 
       const res = await fetch(`/api/podcasts?${params}`, { headers });
-      if (!res.ok) throw new Error("Erreur lors du chargement des podcasts.");
+      if (!res.ok) {
+        let msg = "Erreur lors du chargement des podcasts.";
+        try {
+          const json = await res.json();
+          if (json.error) msg = json.error;
+        } catch {}
+        throw new Error(msg);
+      }
       setPodcasts(await res.json());
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Erreur inconnue");

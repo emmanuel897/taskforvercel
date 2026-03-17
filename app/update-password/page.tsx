@@ -25,6 +25,7 @@ export default function UpdatePasswordPage() {
     setError(null);
     try {
       const supabase = getSupabase();
+      if (!supabase) throw new Error("Configuration Supabase manquante.");
       const { error: authError } = await supabase.auth.updateUser({ password });
       if (authError) throw authError;
       router.push("/");

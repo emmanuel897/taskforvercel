@@ -16,6 +16,7 @@ export default function ResetPasswordPage() {
     setError(null);
     try {
       const supabase = getSupabase();
+      if (!supabase) throw new Error("Configuration Supabase manquante.");
       const { error: authError } = await supabase.auth.resetPasswordForEmail(
         email,
         { redirectTo: `${window.location.origin}/update-password` }

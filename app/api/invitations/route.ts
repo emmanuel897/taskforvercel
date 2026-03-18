@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSupabase } from "@/lib/auth";
+import { getAdminSupabase, getServerSupabase } from "@/lib/auth";
 
 // POST /api/invitations — valider un token d'invitation et créer le compte
 export async function POST(req: Request) {
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
   }
 
   const supabase = getServerSupabase();
+  const adminSupabase = getAdminSupabase();
 
   // Vérifier le token
   const { data: invitation } = await supabase
@@ -34,10 +35,11 @@ export async function POST(req: Request) {
     );
   }
 
-  // Créer le compte Supabase Auth
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  // Créer le compte avec email déjà confirmé (bypasse l'email de confirmation)
+  const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
     email,
     password,
+    email_confirm: true,
   });
 
   if (authError || !authData.user) {
@@ -48,7 +50,7 @@ export async function POST(req: Request) {
   }
 
   // Lier l'utilisateur à son profil ami via la fonction SQL
-  const { data: linked } = await supabase.rpc("use_invitation", {
+  const { data: linked } = await adminSupabase.rpc("use_invitation", {
     p_token: token,
     p_user_id: authData.user.id,
   });

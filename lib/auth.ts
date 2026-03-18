@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Friend } from "./supabase";
 
-// Client côté serveur (sans cache singleton, pour les API routes)
+// Client côté serveur avec clé anon (pour les API routes authentifiées)
 export function getServerSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -9,6 +9,18 @@ export function getServerSupabase() {
     throw new Error("Variables d'environnement Supabase manquantes sur le serveur.");
   }
   return createClient(url, key);
+}
+
+// Client admin avec service role key (bypasse RLS et confirmation email)
+export function getAdminSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY manquant dans les variables d'environnement.");
+  }
+  return createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 }
 
 // Récupère le profil ami à partir du JWT passé en Authorization header
